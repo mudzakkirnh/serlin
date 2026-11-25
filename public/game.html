@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LKS CTF — Simulator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+
+<body class="bg-gray-100 h-screen flex flex-col overflow-hidden" id="gameBody">
+
+  <!-- ═══════════════════════════════════════════
+       TOP NAVBAR
+  ═══════════════════════════════════════════ -->
+  <nav class="bg-white border-b border-gray-200 shadow-sm flex-shrink-0 z-20">
+    <div class="flex items-center justify-between px-4 py-2">
+
+      <!-- Left: Logo + Role -->
+      <div class="flex items-center gap-3">
+        <a href="/" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors mr-2">
+          <span>←</span>
+        </a>
+        <div class="w-7 h-7 rounded-lg flex items-center justify-center text-sm" id="navRoleIcon">🛡</div>
+        <div>
+          <div class="font-bold text-gray-900 text-sm leading-tight">LKS Cyber Security Simulator</div>
+          <div class="text-xs text-gray-400" id="navRoleLabel">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Center: Score + Progress -->
+      <div class="hidden md:flex items-center gap-6">
+        <!-- Score -->
+        <div class="text-center">
+          <div class="text-xs text-gray-400 mb-0.5">Skor</div>
+          <div class="font-extrabold text-gray-900 text-lg leading-none">
+            <span id="scoreDisplay">0</span>
+            <span class="text-gray-400 font-normal text-xs">/<span id="maxScoreDisplay">0</span></span>
+          </div>
+        </div>
+
+        <!-- Progress -->
+        <div class="w-40">
+          <div class="flex justify-between text-xs text-gray-400 mb-1">
+            <span>Progress</span>
+            <span><span id="progressText">0/0</span> (<span id="progressPct">0</span>%)</span>
+          </div>
+          <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div id="progressBar" class="progress-bar h-full rounded-full bg-blue-500 w-0"></div>
+          </div>
+        </div>
+
+        <!-- Timer -->
+        <div class="text-center">
+          <div class="text-xs text-gray-400 mb-0.5">Waktu</div>
+          <div class="font-mono font-bold text-gray-900 text-sm" id="timerDisplay">00:00:00</div>
+        </div>
+      </div>
+
+      <!-- Right: Player + actions -->
+      <div class="flex items-center gap-3">
+        <div class="text-right hidden sm:block">
+          <div class="text-xs text-gray-400">Pemain</div>
+          <div class="font-semibold text-gray-800 text-sm" id="navPlayerName">-</div>
+        </div>
+        <button onclick="showScoreboard()"
+          class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg font-medium transition-colors border border-gray-200">
+          🏆 Skor
+        </button>
+        <button onclick="confirmRestart()"
+          class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg font-medium transition-colors border border-gray-200">
+          🔄 Reset
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════
+       MAIN LAYOUT: Left Panel | Terminal | Right Panel
+  ═══════════════════════════════════════════ -->
+  <div class="flex flex-1 overflow-hidden">
+
+    <!-- ─── LEFT: Challenge List ─────────────── -->
+    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0 overflow-hidden">
+      <!-- Header -->
+      <div class="px-4 py-3 border-b border-gray-200">
+        <h2 class="font-bold text-gray-700 text-xs uppercase tracking-wider">Daftar Challenge</h2>
+      </div>
+      <!-- List -->
+      <div class="flex-1 overflow-y-auto p-2" id="challengeList">
+        <!-- Rendered by game.js -->
+      </div>
+    </aside>
+
+    <!-- ─── CENTER: Terminal ─────────────────── -->
+    <main class="flex-1 flex flex-col overflow-hidden terminal-container terminal-scanline" id="terminalWrapper">
+      <!-- Terminal Header Bar -->
+      <div class="flex items-center px-4 py-2 border-b border-gray-800 flex-shrink-0" style="background:#161b22">
+        <div class="flex gap-1.5 mr-3">
+          <div class="w-3 h-3 rounded-full bg-red-500 opacity-80"></div>
+          <div class="w-3 h-3 rounded-full bg-yellow-500 opacity-80"></div>
+          <div class="w-3 h-3 rounded-full bg-green-500 opacity-80"></div>
+        </div>
+        <span class="text-xs text-gray-500 font-mono" id="terminalTitle">lks-ctf — bash</span>
+        <div class="ml-auto flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+          <span class="text-xs text-gray-500 font-mono">CONNECTED</span>
+        </div>
+      </div>
+
+      <!-- Terminal Output Area -->
+      <div class="flex-1 overflow-y-auto terminal-scroll p-4" id="terminalOutput" style="background:#0d1117">
+        <!-- Terminal output appended here by Terminal class -->
+      </div>
+
+      <!-- Terminal Input Bar -->
+      <div class="flex items-center px-4 py-3 border-t border-gray-800 flex-shrink-0" style="background:#0d1117">
+        <span class="font-mono text-sm mr-2 flex-shrink-0" id="terminalPrompt">
+          <span style="color:#3fb950">user</span><span style="color:#8b949e">@</span><span
+            style="color:#58a6ff">lks-ctf</span><span style="color:#8b949e">:~$</span>
+        </span>
+        <input type="text" id="terminalInput" class="terminal-input flex-1" placeholder="ketik perintah..."
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+        <span class="cursor-blink ml-1" style="color:#58a6ff;font-family:monospace">█</span>
+      </div>
+    </main>
+
+    <!-- ─── RIGHT: Challenge Panel + Info ─────── -->
+    <aside class="w-60 bg-white border-l border-gray-200 flex flex-col flex-shrink-0 overflow-hidden">
+      <!-- Challenge Panel -->
+      <div class="border-b border-gray-200">
+        <div class="px-4 py-3 border-b border-gray-100">
+          <h2 class="font-bold text-gray-700 text-xs uppercase tracking-wider">Challenge Aktif</h2>
+        </div>
+        <div id="challengePanel">
+          <!-- Rendered by game.js -->
+        </div>
+      </div>
+
+      <!-- Commands Quick Ref -->
+      <div class="flex-1 p-4 overflow-y-auto">
+        <h3 class="font-bold text-gray-500 text-xs uppercase tracking-wider mb-3">Quick Commands</h3>
+        <div class="space-y-1.5">
+          <div class="flex items-center gap-2">
+            <code class="text-xs bg-gray-900 text-green-400 px-1.5 py-0.5 rounded font-mono">help</code>
+            <span class="text-xs text-gray-500">Bantuan</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <code class="text-xs bg-gray-900 text-green-400 px-1.5 py-0.5 rounded font-mono">info</code>
+            <span class="text-xs text-gray-500">Detail challenge</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <code class="text-xs bg-gray-900 text-green-400 px-1.5 py-0.5 rounded font-mono">hint</code>
+            <span class="text-xs text-gray-500">Petunjuk (-50pts)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <code class="text-xs bg-gray-900 text-green-400 px-1.5 py-0.5 rounded font-mono">submit</code>
+            <span class="text-xs text-gray-500">Kirim jawaban</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <code class="text-xs bg-gray-900 text-green-400 px-1.5 py-0.5 rounded font-mono">challenges</code>
+            <span class="text-xs text-gray-500">List semua</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <code class="text-xs bg-gray-900 text-green-400 px-1.5 py-0.5 rounded font-mono">select N</code>
+            <span class="text-xs text-gray-500">Pilih challenge</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <code class="text-xs bg-gray-900 text-green-400 px-1.5 py-0.5 rounded font-mono">score</code>
+            <span class="text-xs text-gray-500">Lihat skor</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <code class="text-xs bg-gray-900 text-green-400 px-1.5 py-0.5 rounded font-mono">next</code>
+            <span class="text-xs text-gray-500">Challenge berikut</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <code class="text-xs bg-gray-900 text-green-400 px-1.5 py-0.5 rounded font-mono">whoami</code>
+            <span class="text-xs text-gray-500">Info pemain</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <code class="text-xs bg-gray-900 text-green-400 px-1.5 py-0.5 rounded font-mono">clear</code>
+            <span class="text-xs text-gray-500">Bersihkan layar</span>
+          </div>
+        </div>
+
+        <!-- Mobile score (shows on small screen) -->
+        <div class="mt-6 md:hidden">
+          <h3 class="font-bold text-gray-500 text-xs uppercase tracking-wider mb-2">Skor</h3>
+          <div class="text-2xl font-extrabold text-gray-900"><span id="scoreDisplay2">0</span></div>
+          <div class="text-xs text-gray-400">poin</div>
+        </div>
+
+        <!-- Scoring Info -->
+        <div class="mt-6 bg-blue-50 rounded-xl p-3 border border-blue-100">
+          <h3 class="font-bold text-blue-700 text-xs mb-2">💡 Info Penilaian</h3>
+          <div class="text-xs text-blue-600 space-y-1">
+            <div>• Poin per challenge: 100–200</div>
+            <div>• Bonus waktu: hingga +100</div>
+            <div>• Pakai hint: -50 poin</div>
+            <div>• Percobaan ulang: gratis</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       VICTORY MODAL
+  ═══════════════════════════════════════════ -->
+  <div id="victoryModal"
+    class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center slide-in">
+      <div class="text-6xl mb-4">🏆</div>
+      <h2 class="text-3xl font-extrabold text-gray-900 mb-1">SELESAI!</h2>
+      <p class="text-gray-500 mb-6">Semua challenge berhasil diselesaikan!</p>
+
+      <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 mb-6 border border-blue-100">
+        <div class="text-xs text-gray-500 mb-1">Pemain</div>
+        <div class="font-bold text-gray-900 text-lg mb-3" id="victoryName">-</div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <div class="text-xs text-gray-400 mb-1">Skor Akhir</div>
+            <div class="font-extrabold text-2xl text-blue-700" id="victoryScore">0</div>
+          </div>
+          <div>
+            <div class="text-xs text-gray-400 mb-1">Waktu Total</div>
+            <div class="font-extrabold text-2xl text-indigo-700" id="victoryTime">00:00</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="document.getElementById('victoryModal').classList.add('hidden')"
+          class="flex-1 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors text-sm">
+          Lanjut Review
+        </button>
+        <button onclick="window.location.href='/'"
+          class="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors text-sm">
+          Mulai Ulang
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SCOREBOARD MODAL
+  ═══════════════════════════════════════════ -->
+  <div id="scoreModal"
+    class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    onclick="closeScore(event)">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full slide-in" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-gray-900">📊 Skor & Progress</h3>
+        <button onclick="document.getElementById('scoreModal').classList.add('hidden')"
+          class="text-gray-400 hover:text-gray-600 text-xl">×</button>
+      </div>
+      <div id="scoreModalContent"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SCRIPTS
+  ═══════════════════════════════════════════ -->
+  <script src="/js/challenges-red.js"></script>
+  <script src="/js/challenges-blue.js"></script>
+  <script src="/js/terminal.js"></script>
+  <script src="/js/game.js"></script>
+
+  <script>
+    // ─────────────────────────────────────────
+    // BOOTSTRAP GAME
+    // ─────────────────────────────────────────
+    const game = new GameEngine();
+
+    // Set role-specific UI
+    const isRed = game.role === 'red';
+    document.getElementById('navRoleIcon').textContent = isRed ? '⚔️' : '🛡️';
+    document.getElementById('navRoleLabel').textContent = isRed ? 'Red Team — Attacker' : 'Blue Team — Defender';
+    document.getElementById('navPlayerName').textContent = game.playerName;
+    document.getElementById('terminalTitle').textContent = isRed
+      ? `${game.playerName}@lks-ctf — red-team`
+      : `${game.playerName}@lks-ctf — blue-team`;
+
+    // Progress bar color
+    document.getElementById('progressBar').className =
+      `progress-bar h-full rounded-full w-0 ${isRed ? 'bg-red-500' : 'bg-blue-500'}`;
+
+    // Nav icon bg
+    document.getElementById('navRoleIcon').closest('div').className =
+      `w-7 h-7 rounded-lg flex items-center justify-center text-sm ${isRed ? 'bg-red-100' : 'bg-blue-100'}`;
+
+    // Init game
+    game.init('terminalWrapper', 'terminalInput');
+
+    // ─────────────────────────────────────────
+    // GLOBAL FUNCTIONS
+    // ─────────────────────────────────────────
+    function showScoreboard() {
+      const modal = document.getElementById('scoreModal');
+      const content = document.getElementById('scoreModalContent');
+      const pct = Math.round((game.solvedIds.size / game.challenges.length) * 100);
+
+      content.innerHTML = `
+        <div class="bg-gray-50 rounded-xl p-4 mb-4">
+          <div class="flex justify-between items-center mb-3">
+            <div>
+              <div class="font-bold text-gray-900">${game.playerName}</div>
+              <div class="text-xs text-gray-500">${isRed ? '⚔️ Red Team' : '🛡️ Blue Team'}</div>
+            </div>
+            <div class="text-right">
+              <div class="font-extrabold text-2xl text-gray-900">${game.score}</div>
+              <div class="text-xs text-gray-400">/ ${game.maxScore} poin</div>
+            </div>
+          </div>
+          <div class="h-3 bg-gray-200 rounded-full overflow-hidden mb-1">
+            <div class="h-full rounded-full ${isRed ? 'bg-red-500' : 'bg-blue-500'}" style="width:${pct}%"></div>
+          </div>
+          <div class="text-xs text-gray-500 text-right">${pct}% selesai</div>
+        </div>
+
+        <div class="space-y-2 max-h-60 overflow-y-auto">
+          ${game.challenges.map((ch, i) => {
+        const done = game.solvedIds.has(ch.id);
+        return `
+              <div class="flex items-center gap-3 p-2 rounded-lg ${done ? 'bg-green-50' : 'bg-gray-50'}">
+                <span class="text-lg">${ch.icon}</span>
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs font-semibold truncate ${done ? 'text-green-800' : 'text-gray-600'}">${ch.title}</div>
+                  <div class="text-xs text-gray-400">${ch.points} pts</div>
+                </div>
+                <span>${done ? '✅' : '○'}</span>
+              </div>
+            `;
+      }).join('')}
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 gap-3 text-center">
+          <div>
+            <div class="font-bold text-gray-900">${game.solvedIds.size}/${game.challenges.length}</div>
+            <div class="text-xs text-gray-400">Selesai</div>
+          </div>
+          <div>
+            <div class="font-bold text-gray-900">${document.getElementById('timerDisplay').textContent}</div>
+            <div class="text-xs text-gray-400">Waktu</div>
+          </div>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    }
+
+    function closeScore(e) {
+      if (e.target === document.getElementById('scoreModal')) {
+        document.getElementById('scoreModal').classList.add('hidden');
+      }
+    }
+
+    function confirmRestart() {
+      if (confirm('Reset semua progress dan kembali ke halaman utama?')) {
+        localStorage.removeItem('lks_player_name');
+        localStorage.removeItem('lks_player_role');
+        localStorage.removeItem('lks_start_time');
+        window.location.href = '/';
+      }
+    }
+
+    // Mobile: sync score display
+    setInterval(() => {
+      const s2 = document.getElementById('scoreDisplay2');
+      const s1 = document.getElementById('scoreDisplay');
+      if (s2 && s1) s2.textContent = s1.textContent;
+    }, 500);
+  </script>
+</body>
+
+</html>
